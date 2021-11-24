@@ -38,11 +38,9 @@ defmodule Crawler do
     IO.inspect("Get movie url list in page #{page_index}")
     raw_data = Crawler.HttpClient.get(get_url_by_page(page_index))
     {:ok, document} = Floki.parse_document(raw_data)
-    data =
-      document
+    document
       |> Floki.find(".movie-list-index.home-v2 ul.last-film-box>li>.movie-item")
       |> Floki.attribute("href")
-    data
   end
 
   @doc """
@@ -107,11 +105,9 @@ defmodule Crawler do
   Get movie year
   """
   def get_movie_year(body) do
-    year =
-      body
+    body
       |> Floki.find("[rel=tag]")
       |> Floki.text
-    year
   end
 
   @doc """
@@ -154,19 +150,17 @@ defmodule Crawler do
   Get episode list
   """
   def get_episode_list(body) do
-    episode_list =
-      body
-      |> Floki.find(".movie-info .movie-meta-info .status")
-      |> Floki.text
-      |> String.split([" ", ",", "/"])
-      |> Enum.map(fn(text) ->
-        case Integer.parse(text) do
-          {value, _} -> value
-          :error -> nil
-        end
-      end)
-      |> Enum.filter(fn(number) -> number != nil end)
-      episode_list
+    body
+    |> Floki.find(".movie-info .movie-meta-info .status")
+    |> Floki.text
+    |> String.split([" ", ",", "/"])
+    |> Enum.map(fn(text) ->
+      case Integer.parse(text) do
+        {value, _} -> value
+        :error -> nil
+      end
+    end)
+    |> Enum.filter(fn(number) -> number != nil end)
   end
 
   def write_to_file(data) do
@@ -180,6 +174,4 @@ defmodule Crawler do
         IO.inspect("Write data to file error")
     end
   end
-
-
 end
