@@ -72,11 +72,9 @@ defmodule Crawler do
   Get movie title
   """
   def get_movie_title(body) do
-    name =
-      body
+    body
       |> Floki.find(".movie-info .movie-title .title-1")
       |> Floki.text
-    name
   end
 
   @doc """
@@ -94,11 +92,10 @@ defmodule Crawler do
   Get movie thumnail
   """
   def get_movie_thumnail(body) do
-    data =
-      body
+    body
       |> Floki.find(".movie-info .movie-l-img img")
       |> Floki.attribute("src")
-    List.last(data)
+      |> List.last()
   end
 
   @doc """
