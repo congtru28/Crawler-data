@@ -2,10 +2,9 @@ defmodule Crawler do
   @base_url "https://iphimmoi.net/category/hoat-hinh/"
 
   def get() do
-    urls = for page <- 1..25, do: get_movie_url_by_page(page)
-    urls = List.flatten(urls)
     data =
-      urls
+      get_movie_url_by_page(1)
+      |> List.flatten()
       |> get_movie_html_body()
       |> Enum.map(fn(body) ->
         {:ok, document} = Floki.parse_document(body)
@@ -36,11 +35,24 @@ defmodule Crawler do
   """
   def get_movie_url_by_page(page_index \\ 1) do
     IO.inspect("Get movie url list in page #{page_index}")
-    raw_data = Crawler.HttpClient.get(get_url_by_page(page_index))
-    {:ok, document} = Floki.parse_document(raw_data)
-    document
-      |> Floki.find(".movie-list-index.home-v2 ul.last-film-box>li>.movie-item")
-      |> Floki.attribute("href")
+    raw_data = get_url_by_page(page_index) |> Crawler.HttpClient.get()
+    # {:ok, document} = Floki.parse_document(raw_data)
+    # document
+    #   |> Floki.find(".movie-list-index.home-v2 ul.last-film-box>li>.movie-item")
+    #   |> Floki.attribute("href")
+    with {:ok, document} <- Floki.parse_document(raw_data) do
+        urls = document
+          |> Floki.find(".movie-list-index.home-v2 ul.last-film-box>li>.movie-item")
+          |> Floki.attribute("href")
+        if length(urls) > 0 do
+          urls ++ get_movie_url_by_page(page_index + 1)
+        else
+          urls
+        end
+      else
+        error -> IO.inspect("Error when parsing document #{inspect(error)}")
+        []
+      end
   end
 
   @doc """
@@ -48,13 +60,10 @@ defmodule Crawler do
   ## Parameters
     - page_index: Interger that represents the page of website.
   """
-  def get_url_by_page(page_index) do
-    if is_integer(page_index) && page_index > 1 do
-      @base_url <> "page/#{page_index}/"
-    else
-      @base_url
-    end
-  end
+
+  def get_url_by_page(1 = _page_index), do: @base_url
+
+  def get_url_by_page(page_index), do: @base_url <> "page/#{page_index}/"
 
   @doc """
   Get movie detail by url
@@ -62,10 +71,8 @@ defmodule Crawler do
     - urls: Array of movie url
   """
   def get_movie_html_body(urls) do
-    urls
-    |> Enum.map(fn(url) ->
-      Crawler.HttpClient.get(url)
-    end)
+    #Enum.map(urls, fn(url) -> Crawler.HttpClient.get(url) end)
+    Enum.map(urls, & Crawler.HttpClient.get/1)
   end
 
   @doc """
@@ -133,11 +140,7 @@ defmodule Crawler do
     if(length(episode_list) > 1) do
       current_episode = List.first(episode_list)
       total_episode = Enum.at(episode_list, 1)
-      if(current_episode == total_episode) do
-        true
-      else
-        false
-      end
+      current_episode == total_episode
     else
       false
     end
