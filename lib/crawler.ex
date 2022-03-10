@@ -40,10 +40,6 @@ defmodule Crawler do
   def get_movie_url_by_page(page_index \\ 1) do
     IO.inspect("Get movie url list in page #{page_index}")
     raw_data = get_url_by_page(page_index) |> Crawler.HttpClient.get()
-    # {:ok, document} = Floki.parse_document(raw_data)
-    # document
-    #   |> Floki.find(".movie-list-index.home-v2 ul.last-film-box>li>.movie-item")
-    #   |> Floki.attribute("href")
     with {:ok, document} <- Floki.parse_document(raw_data) do
       urls =
         document
